@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Environments
+.env
+.venv/
+env/
+venv/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Large AI files
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.om
+*.onnx
+data/
+dataset/
+runs/
+wandb/
+
+# Data files
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tif
+*.tiff
+*.heic
+*.JPG
+*.JPEG
+*.PNG
+*.BMP
+*.TIF
+*.TIFF
+*.HEIC
+*.mp4
+*.mov
+*.MOV
+*.avi
+*.data
+*.json
