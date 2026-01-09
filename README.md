@@ -1,27 +1,99 @@
-# 代码结构
-label_converter/
-├── configs/                 # 配置文件
-│   ├── category_map.yaml    # 类别映射表 (e.g., "person" -> 0)
-│   └── default.yaml         # 全局配置
-├── core/                    # 核心逻辑
-│   ├── __init__.py
-│   ├── data_model.py        # 定义 UnifiedLabel, BBox 等数据结构 (IR)
-│   └── registry.py          # 注册机制，用于管理所有的 Reader/Writer
-├── formats/                 # 各个格式的具体实现 (插件)
-│   ├── __init__.py
-│   ├── base.py              # 定义 BaseReader 和 BaseWriter 抽象基类
-│   ├── coco.py              # COCO 格式的 Reader/Writer 实现
-│   ├── yolo.py              # YOLO 格式的 Reader/Writer 实现
-│   ├── voc.py               # VOC XML 格式的 Reader/Writer 实现
-│   └── labelme.py           # LabelMe JSON 格式的 Reader/Writer 实现
-├── utils/                   # 工具类
-│   ├── image_utils.py       # 读取图片宽高 (Lazy loading)
-│   ├── path_utils.py        # 路径处理
-│   └── vis_utils.py         # 转换后的可视化验证工具
-├── tests/                   # 单元测试 (非常重要，尤其是坐标转换)
-├── main.py                  # 统一入口
-├── requirements.txt
-└── README.md
+# 🔄 Universal Label Converter (通用标签转换器)
 
-# 使用方法 
-python main.py --src-fmt yolo --src-label /path/to/input --src-image /path/to/image --dst-fmt voc --dst-path /path/to/output --category-map /path/to/category_map.yaml
+Label Converter 是一个轻量级且高度可扩展的目标检测数据集格式转换工具。它采用了 **中间表示（Intermediate Representation, IR）** 设计模式，将不同格式（COCO, YOLO, VOC, LabelMe）的数据转换为统一的数据结构，再导出为目标格式。
+
+## ✨ 主要特性
+
+* **多格式支持**：目前支持 COCO, YOLO (TXT), Pascal VOC (XML), LabelMe (JSON)。
+* **统一中间表示**：核心逻辑基于 `UnifiedLabel` 和 `BBox` 数据结构，解耦读取与写入。
+* **插件化架构**：通过 `registry.py` 管理，新增一种格式只需继承基类并注册，无需修改核心代码。
+* **可视化验证**：内置可视化工具，确保转换后的坐标（尤其是归一化坐标）准确无误。
+* **类别映射**：支持灵活的类别 ID 与名称映射配置。
+
+## 📂 代码结构
+
+```text
+label_converter/
+├── configs/                 # 配置文件目录
+│   ├── category_map.yaml    # 类别映射表 (e.g., "person" -> 0)
+│   └── default.yaml         # 全局默认配置
+├── core/                    # 核心逻辑层 (IR)
+│   ├── __init__.py
+│   ├── data_model.py        # 定义 UnifiedLabel, BBox 等核心数据结构
+│   └── registry.py          # 注册中心，管理所有的 Reader/Writer
+├── formats/                 # 格式插件层 (具体实现)
+│   ├── __init__.py
+│   ├── base.py              # 抽象基类 BaseReader / BaseWriter
+│   ├── coco.py              # COCO 格式实现
+│   ├── yolo.py              # YOLO 格式实现
+│   ├── voc.py               # VOC XML 格式实现
+│   └── labelme.py           # LabelMe JSON 格式实现
+├── utils/                   # 工具库
+│   ├── image_utils.py       # 图片处理 (支持 Lazy loading 读取宽高)
+│   ├── path_utils.py        # 路径与文件处理
+│   └── vis_utils.py         # 转换结果可视化验证工具
+├── tests/                   # 单元测试 (重点覆盖坐标转换逻辑)
+├── main.py                  # 程序统一入口
+├── requirements.txt         # 依赖列表
+└── README.md                # 项目说明文档
+
+```
+
+## 🚀 快速开始
+
+### 1. 安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. 配置文件准备
+
+在转换 YOLO 等需要纯数字 ID 的格式时，必须提供 `category_map.yaml`。格式如下：
+
+```yaml
+# configs/category_map.yaml
+categories:
+  0: person
+  1: bicycle
+  2: car
+
+```
+
+### 3. 运行转换
+
+使用 `main.py` 进行格式转换。以下是一个典型的从 **YOLO** 转换到 **VOC** 的例子：
+
+```bash
+python main.py \
+  --src-fmt yolo \
+  --src-label /path/to/dataset/labels \
+  --src-image /path/to/dataset/images \
+  --dst-fmt voc \
+  --dst-path /path/to/output \
+  --category-map ./configs/category_map.yaml
+
+```
+
+## 🛠️ 参数说明
+
+| 参数 | 缩写 | 必填 | 描述 | 示例 |
+| --- | --- | --- | --- | --- |
+| `--src-fmt` | - | ✅ | 源数据格式 (Supported: `yolo`, `coco`, `voc`, `labelme`) | `yolo` |
+| `--src-label` | - | ✅ | 源标签文件路径 (文件夹或具体json文件) | `./data/labels/` |
+| `--src-image` | - | ❌ | 源图片路径 (YOLO/VOC 转换通常需要读取图片宽高) | `./data/images/` |
+| `--dst-fmt` | - | ✅ | 目标数据格式 | `voc` |
+| `--dst-path` | - | ✅ | 输出保存路径 | `./output/` |
+| `--category-map` | - | ❌ | 类别映射文件路径 (涉及到 ID与Name 转换时必填) | `./configs/map.yaml` |
+| `--vis` | - | ❌ | 是否开启可视化验证 (生成带框图片) | `True` |
+
+## 🤝 如何贡献 (Add New Format)
+
+得益于注册机制，添加新格式非常简单：
+
+1. 在 `formats/` 下新建文件（例如 `myformat.py`）。
+2. 继承 `core.base` 中的 `BaseReader` 和 `BaseWriter`。
+3. 使用装饰器 `@ReaderRegistry.register('myformat')` 注册类。
+4. 在 `formats/__init__.py` 中导入该文件。
+
+---
