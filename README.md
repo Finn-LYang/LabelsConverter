@@ -53,11 +53,11 @@ pip install -r requirements.txt
 
 ```yaml
 # configs/category_map.yaml
-categories:
-  0: person
-  1: bicycle
-  2: car
-
+{
+  0: 'person',
+  1: 'bicycle',
+  2: 'car',
+}
 ```
 
 ### 3. 运行转换
