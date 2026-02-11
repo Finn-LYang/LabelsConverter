@@ -1,37 +1,47 @@
 import os
 import yaml
+from pathlib import Path
 
-def get_files(file_dir, ext=None, recursive=False):
+def get_files(dir_path, ext=None, recursive=False, target_dir_name=None):
     """
     获取目录下的所有文件
-    :param file_dir: 目录路径
+    :param dir_path: 目录路径
     :param ext: 文件扩展名
+    :param target_dir_name: 目录路径中包含的目标文件夹名
     :param recursive: 是否递归遍历子文件夹
     :return: 文件列表
     """
-    if not os.path.isdir(file_dir) and os.path.splitext(file_dir)[1] == ext:
-        return [file_dir]
-        # raise NotADirectoryError(f"'{file_dir}' is not a valid directory")
+    base_path = Path(dir_path)
+    if not base_path.is_dir():
+        raise NotADirectoryError(f"'{dir_path}' is not a valid directory")
 
-    if isinstance(ext, str): # 扩展名是字符串则转换为元组
-        ext = (ext,)
-        
+    # 统一扩展名格式：确保是元组且带点，如 ('.jpg', '.png')
+    if ext:
+        if isinstance(ext, str):
+            ext = (ext if ext.startswith('.') else f'.{ext}',)
+        else:
+            ext = tuple(e if e.startswith('.') else f'.{e}' for e in ext)
+
     results = []
-
-    if recursive:   # 递归遍历子文件夹
-        for root, _, files in os.walk(file_dir):
-            for file in files:
-                if ext is None or file.endswith(ext):
-                    results.append(os.path.join(root, file))
+    
+    # 递归逻辑
+    if recursive:
+        # 使用 rglob 匹配所有文件
+        for p in base_path.rglob('*'):
+            if p.is_file():
+                # 检查是否在目标文件夹名下
+                if target_dir_name and target_dir_name not in p.parts:
+                    continue
+                # 检查后缀
+                if not ext or p.suffix.lower() in [e.lower() for e in ext]:
+                    results.append(str(p))
     else:
-        if ext is None: # 扩展名为空则返回该目录下所有文件
-            results = [os.path.join(file_dir, f) for f in os.listdir(file_dir) 
-                    if os.path.isfile(os.path.join(file_dir, f))]
-        
-        else:   
-            results = [os.path.join(file_dir, f) for f in os.listdir(file_dir)
-                    if os.path.isfile(os.path.join(file_dir, f)) and f.endswith(ext)]
-
+        # 非递归逻辑
+        for p in base_path.iterdir():
+            if p.is_file():
+                if not ext or p.suffix.lower() in [e.lower() for e in ext]:
+                    results.append(str(p))
+                    
     return results
 
 def load_category_map(yaml_path="./config/category_map.yaml"):
