@@ -1,6 +1,7 @@
 # 统一标签数据模型
+from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union
 import numpy as np
 
 @dataclass
@@ -24,11 +25,12 @@ class UnifiedLabel:
     统一标签数据结构，
     可用此结构转换成任意标签格式。
     """
-    image_path: str
+    # image_path: str
+    image_path: Union[Path, str]
     image_width: int
     image_height: int
     bboxes: List[BBox]
-    masks: List[np.ndarray] # Optional: 用于分割
+    masks: Optional[List[np.ndarray]] # Optional: 用于分割
     
     class Config:
         arbitrary_types_allowed = True
